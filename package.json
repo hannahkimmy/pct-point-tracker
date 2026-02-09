@@ -1,0 +1,27 @@
+{
+  "name": "pcpoints-attendance-app",
+  "version": "1.0.0",
+  "description": "Web app for tracking fraternity attendance and points with role-based admin controls.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "import:csv": "node import_from_csv.js",
+    "seed:vpcomms": "node seed_vpcomms.js",
+    "migrate:emails": "node migrate_emails.js"
+  },
+  "keywords": ["attendance", "points", "fraternity", "express", "sqlite"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "better-sqlite3": "^9.6.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

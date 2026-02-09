@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phi Chi Theta Zeta Gamma - Attendance Points</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'pct-navy': '#1e3a8a',
+              'pct-navy-dark': '#1e40af',
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="min-h-screen bg-white text-black">
+    <!-- Login Page (shown when not logged in) -->
+    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gray-50">
+      <div class="max-w-md w-full mx-4">
+        <div class="bg-white border-2 border-pct-navy rounded-xl p-8 shadow-xl">
+          <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-pct-navy mb-2">Phi Chi Theta</h1>
+            <p class="text-lg text-gray-700">Zeta Gamma Chapter</p>
+            <p class="text-sm text-gray-600 mt-2">Attendance Points System</p>
+          </div>
+          <form id="login-form" class="space-y-5">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">NetID / Username or Email</label>
+              <input
+                id="login-username"
+                type="text"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                placeholder="Enter your NetID, username, or email"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-6 py-3 text-base font-semibold text-white transition-colors"
+            >
+              Log in
+            </button>
+          </form>
+          <div id="login-error" class="mt-4 text-sm text-red-600 hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard (shown when logged in) -->
+    <div id="dashboard" class="max-w-6xl mx-auto py-10 px-4 hidden">
+      <header class="flex items-center justify-between mb-8 pb-4 border-b-2 border-pct-navy">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">
+            <span class="text-pct-navy">Phi Chi Theta</span>
+            <span class="text-black"> Zeta Gamma</span>
+          </h1>
+          <p class="text-sm text-gray-600 mt-1">Attendance Points System</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div id="user-info" class="text-sm text-gray-700"></div>
+          <button
+            id="login-btn"
+            class="inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-4 py-2 text-sm font-medium text-white"
+          >
+            Log in
+          </button>
+          <button
+            id="logout-btn"
+            class="hidden inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-3 py-1.5 text-xs font-medium text-white"
+          >
+            Log out
+          </button>
+        </div>
+      </header>
+
+      <main class="flex flex-col md:flex-row gap-6 justify-center items-start">
+        <!-- Left: Points overview -->
+        <section class="space-y-6 w-full md:w-auto">
+          <div id="my-points-section" class="bg-white border-2 border-pct-navy rounded-xl p-5 shadow-lg">
+            <h2 class="text-lg font-semibold mb-3 text-pct-navy text-center">My Points</h2>
+            <div id="my-points" class="grid grid-cols-2 gap-3 text-sm">
+              <div class="rounded-lg bg-gray-50 border-2 border-pct-navy/30 p-3">
+                <div class="text-xs text-gray-600 uppercase tracking-wide">Brotherhood</div>
+                <div class="mt-1 text-xl font-semibold text-pct-navy text-center" id="points-brotherhood">–</div>
+              </div>
+              <div class="rounded-lg bg-gray-50 border-2 border-pct-navy/30 p-3">
+                <div class="text-xs text-gray-600 uppercase tracking-wide">Professional</div>
+                <div class="mt-1 text-xl font-semibold text-pct-navy text-center" id="points-professional">–</div>
+              </div>
+              <div class="rounded-lg bg-gray-50 border-2 border-pct-navy/30 p-3">
+                <div class="text-xs text-gray-600 uppercase tracking-wide">Service</div>
+                <div class="mt-1 text-xl font-semibold text-pct-navy text-center" id="points-service">–</div>
+              </div>
+              <div class="rounded-lg bg-gray-50 border-2 border-pct-navy/30 p-3">
+                <div class="text-xs text-gray-600 uppercase tracking-wide">General</div>
+                <div class="mt-1 text-xl font-semibold text-pct-navy text-center" id="points-general">–</div>
+              </div>
+              <div class="col-span-2 rounded-lg bg-pct-navy border-2 border-pct-navy p-3">
+                <div class="text-xs text-white uppercase tracking-wide text-center">Overall</div>
+                <div class="mt-1 text-2xl font-bold text-white text-center" id="points-overall">–</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: admin panels -->
+        <section class="space-y-6 w-full md:w-auto md:max-w-md">
+          <!-- Landing Page (shown when logged in) -->
+          <div id="landing-page" class="hidden bg-white border-2 border-pct-navy rounded-xl p-5 shadow-lg">
+            <h2 class="text-lg font-semibold mb-3 text-pct-navy text-center">Welcome back!</h2>
+            <p class="text-sm text-gray-700 mb-4 text-center" id="landing-message">
+              You're logged in. Use the panels below to manage attendance and view points.
+            </p>
+            <div id="vpcomms-actions" class="hidden space-y-3">
+              <button
+                id="add-member-btn"
+                class="w-full inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-4 py-2 text-sm font-semibold text-white"
+              >
+                + Add New Member
+              </button>
+              <button
+                id="view-all-points-btn"
+                class="w-full inline-flex justify-center items-center rounded-md bg-white border-2 border-pct-navy hover:bg-gray-50 px-4 py-2 text-sm font-semibold text-pct-navy"
+              >
+                View All Members' Points
+              </button>
+            </div>
+            <div id="leadership-actions" class="hidden space-y-3 mt-4">
+              <button
+                id="take-attendance-btn"
+                class="w-full inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-4 py-2 text-sm font-semibold text-white"
+              >
+                Take Attendance
+              </button>
+              <button
+                id="edit-events-btn"
+                class="w-full inline-flex justify-center items-center rounded-md bg-white border-2 border-pct-navy hover:bg-gray-50 px-4 py-2 text-sm font-semibold text-pct-navy"
+              >
+                Edit Events
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white border-2 border-pct-navy rounded-xl p-5 shadow-lg">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-lg font-semibold text-pct-navy flex-1 text-center">Admin Panel</h2>
+              <span class="text-xs text-gray-600" id="admin-role-label">Signed out</span>
+            </div>
+
+            <div class="space-y-4 text-sm">
+              <!-- Add Member Panel (VP Comms only, hidden by default) -->
+              <div id="add-member-panel" class="hidden space-y-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-semibold text-black">Add New Member</h3>
+                  <button
+                    id="close-add-member"
+                    class="text-xs text-gray-600 hover:text-pct-navy"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+                <form id="create-user-form" class="grid grid-cols-5 gap-2">
+                  <input
+                    id="create-user-name"
+                    type="text"
+                    placeholder="Full Name"
+                    required
+                    class="col-span-1 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                  />
+                  <input
+                    id="create-user-username"
+                    type="text"
+                    placeholder="Username (NetID)"
+                    required
+                    class="col-span-1 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                  />
+                  <input
+                    id="create-user-email"
+                    type="email"
+                    placeholder="Email (optional)"
+                    class="col-span-1 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                  />
+                  <input
+                    id="create-user-password"
+                    type="password"
+                    placeholder="Password"
+                    required
+                    minlength="6"
+                    class="col-span-1 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                  />
+                  <select
+                    id="create-user-role"
+                    class="col-span-1 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                  >
+                    <option value="0">Standard Permissions</option>
+                    <option value="1">Leadership Permissions</option>
+                    <option value="2">Exec Permissions</option>
+                    <option value="3">VP Communications (Exec)</option>
+                  </select>
+                  <button
+                    type="submit"
+                    class="col-span-5 inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Create Member
+                  </button>
+                </form>
+              </div>
+
+              <!-- Take attendance (level 1+) -->
+              <div id="attendance-panel" class="hidden space-y-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-semibold text-black">Take attendance</h3>
+                  <span class="text-[10px] uppercase tracking-wide text-gray-600">Level 1+</span>
+                </div>
+                <form class="space-y-2">
+                  <div class="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Event name"
+                      class="rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                      required
+                    />
+                    <select
+                      class="rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                      required
+                    >
+                      <option value="">Category…</option>
+                      <option value="brotherhood">Brotherhood</option>
+                      <option value="professional">Professional</option>
+                      <option value="service">Service</option>
+                      <option value="general">General</option>
+                    </select>
+                    <input
+                      type="datetime-local"
+                      class="rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                      required
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Points"
+                      class="rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Semester (e.g. Spring 2026)"
+                      class="col-span-2 rounded-md bg-white border-2 border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                      required
+                    />
+                  </div>
+                  <div class="mt-2 border-2 border-gray-300 rounded-lg max-h-60 overflow-y-auto bg-gray-50">
+                    <div class="px-3 py-2 text-xs text-gray-600">Sign in as an admin to load users.</div>
+                  </div>
+                  <button
+                    type="submit"
+                    class="inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-3 py-1.5 text-xs font-semibold text-white mt-2"
+                  >
+                    Save event & attendance
+                  </button>
+                </form>
+              </div>
+
+              <!-- Reset semester (level 3 VP Comms only) -->
+              <div id="reset-panel" class="hidden space-y-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-semibold text-black">Reset semester</h3>
+                  <span class="text-[10px] uppercase tracking-wide text-red-600">Danger · Level 3 only</span>
+                </div>
+                <p class="text-xs text-gray-600">
+                  This permanently deletes all events and attendance records, but keeps the user list.
+                </p>
+                <button
+                  id="reset-btn"
+                  class="inline-flex justify-center items-center rounded-md bg-red-600 hover:bg-red-500 px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  Wipe events & attendance
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div id="toast" class="fixed bottom-4 right-4 hidden max-w-xs rounded-lg bg-white border-2 border-pct-navy px-4 py-2 text-sm shadow-lg text-black"></div>
+    </div>
+
+    <!-- Full-screen All Members Points Page (Level 2 only) -->
+    <div id="all-members-page" class="hidden fixed inset-0 bg-white z-50 overflow-y-auto">
+      <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b-2 border-pct-navy">
+          <div>
+            <h1 class="text-3xl font-bold text-pct-navy">All Members' Points</h1>
+            <p class="text-sm text-gray-600 mt-1">Phi Chi Theta Zeta Gamma</p>
+          </div>
+          <button
+            id="close-all-members-page"
+            class="inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-4 py-2 text-sm font-semibold text-white"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+
+        <div class="mb-6">
+          <input
+            id="search-members-input"
+            type="text"
+            placeholder="Search by member name..."
+            class="w-full max-w-md rounded-md bg-white border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+          />
+        </div>
+
+        <div id="all-members-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="px-4 py-3 text-gray-600">Loading members...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Take Attendance Popup (Level 1+) -->
+    <div id="attendance-popup" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto py-4">
+      <div class="bg-white border-2 border-pct-navy rounded-xl p-6 max-w-4xl w-full mx-4 shadow-2xl my-auto">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-pct-navy">
+          <h2 class="text-2xl font-bold text-pct-navy" id="attendance-popup-title">Take Attendance</h2>
+          <button
+            id="close-attendance-popup"
+            class="text-gray-600 hover:text-pct-navy text-2xl font-bold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form id="create-event-form-popup" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Event Name</label>
+              <input
+                id="event-name"
+                type="text"
+                placeholder="Event name"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+              <select
+                id="event-category"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                required
+              >
+                <option value="">Select category…</option>
+                <option value="brotherhood">Brotherhood</option>
+                <option value="professional">Professional</option>
+                <option value="service">Service</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Date & Time</label>
+              <input
+                id="event-date"
+                type="datetime-local"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Points</label>
+              <input
+                id="event-points"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Points"
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+                required
+              />
+            </div>
+            <div class="col-span-2 flex items-center gap-2">
+              <input
+                id="event-mandatory"
+                type="checkbox"
+                class="rounded border-2 border-gray-300 text-pct-navy focus:ring-pct-navy"
+              />
+              <label for="event-mandatory" class="text-sm font-medium text-gray-700">Mandatory event (members who don&apos;t attend lose 1 point)</label>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <div class="mb-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Search Members</label>
+              <input
+                id="search-attendance-input"
+                type="text"
+                placeholder="Search by name..."
+                class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black"
+              />
+            </div>
+            <div class="border-2 border-gray-300 rounded-lg bg-gray-50 overflow-y-auto max-h-[400px]" id="attendance-users">
+              <div class="px-3 py-2 text-xs text-gray-600">Loading members...</div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-4 border-t-2 border-gray-200">
+            <button
+              type="submit"
+              id="save-event-btn"
+              class="flex-1 inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-6 py-3 text-base font-semibold text-white"
+            >
+              Save Event & Attendance
+            </button>
+            <button
+              type="button"
+              id="cancel-attendance"
+              class="flex-1 inline-flex justify-center items-center rounded-md bg-gray-200 hover:bg-gray-300 px-6 py-3 text-base font-semibold text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Events List Modal (Level 1+) -->
+    <div id="events-list-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div class="bg-white border-2 border-pct-navy rounded-xl p-6 max-w-4xl w-full mx-4 shadow-2xl max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-pct-navy">
+          <h2 class="text-2xl font-bold text-pct-navy">Edit Events</h2>
+          <button
+            id="close-events-list-modal"
+            class="text-gray-600 hover:text-pct-navy text-2xl font-bold"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <div id="events-list" class="space-y-3">
+            <div class="px-4 py-3 text-gray-600">Loading events...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const toastEl = document.getElementById('toast');
+      function showToast(message, type = 'info') {
+        toastEl.textContent = message;
+        toastEl.classList.remove('hidden');
+        toastEl.classList.remove('border-red-500', 'border-emerald-500', 'border-pct-navy');
+        if (type === 'error') toastEl.classList.add('border-red-500');
+        else if (type === 'success') toastEl.classList.add('border-emerald-500');
+        else toastEl.classList.add('border-pct-navy');
+        setTimeout(() => toastEl.classList.add('hidden'), 3000);
+      }
+
+      async function api(path, options = {}) {
+        const res = await fetch(path, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          ...options,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Request failed');
+        }
+        return data;
+      }
+
+      const loginForm = document.getElementById('login-form');
+      const loginPage = document.getElementById('login-page');
+      const dashboard = document.getElementById('dashboard');
+      const loginBtn = document.getElementById('login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      const loginError = document.getElementById('login-error');
+      const createUserForm = document.getElementById('create-user-form');
+      if (!createUserForm) {
+        console.error('create-user-form not found!');
+      }
+      const createEventForm = document.getElementById('create-event-form-popup');
+      const userInfoEl = document.getElementById('user-info');
+      const adminRoleLabel = document.getElementById('admin-role-label');
+      const addMemberPanel = document.getElementById('add-member-panel');
+      const attendancePanel = document.getElementById('attendance-panel');
+      const resetPanel = document.getElementById('reset-panel');
+      const attendanceUsers = document.getElementById('attendance-users');
+      const resetBtn = document.getElementById('reset-btn');
+      const landingPage = document.getElementById('landing-page');
+      const vpcommsActions = document.getElementById('vpcomms-actions');
+      const leadershipActions = document.getElementById('leadership-actions');
+      const addMemberBtn = document.getElementById('add-member-btn');
+      const viewAllPointsBtn = document.getElementById('view-all-points-btn');
+      const takeAttendanceBtn = document.getElementById('take-attendance-btn');
+      const allMembersPage = document.getElementById('all-members-page');
+      const allMembersGrid = document.getElementById('all-members-grid');
+      const searchMembersInput = document.getElementById('search-members-input');
+      const closeAllMembersPage = document.getElementById('close-all-members-page');
+      const attendancePopup = document.getElementById('attendance-popup');
+      const closeAttendancePopup = document.getElementById('close-attendance-popup');
+      const cancelAttendance = document.getElementById('cancel-attendance');
+      const searchAttendanceInput = document.getElementById('search-attendance-input');
+      const closeAddMember = document.getElementById('close-add-member');
+      const editEventsBtn = document.getElementById('edit-events-btn');
+      const eventsListModal = document.getElementById('events-list-modal');
+      const closeEventsListModal = document.getElementById('close-events-list-modal');
+      const eventsList = document.getElementById('events-list');
+      const attendancePopupTitle = document.getElementById('attendance-popup-title');
+      const saveEventBtn = document.getElementById('save-event-btn');
+      
+      let editingEventId = null; // Track which event is being edited
+
+      async function refreshMe() {
+        try {
+          const { user } = await api('/api/me');
+          // User is logged in - show dashboard
+          userInfoEl.textContent = user ? user.name + ' (' + (user.email || user.username) + ')' : '';
+          logoutBtn.classList.remove('hidden');
+          loginBtn.classList.add('hidden');
+          loginPage.classList.add('hidden');
+          dashboard.classList.remove('hidden');
+          landingPage.classList.remove('hidden');
+          // Only refresh points for level 0 members (regular members)
+          if (user && user.role_level < 1) {
+            await refreshMyPoints();
+          } else {
+            clearPoints();
+          }
+          updateAdminUI(user);
+        } catch {
+          // User is not logged in - show login page
+          userInfoEl.textContent = 'Not signed in';
+          logoutBtn.classList.add('hidden');
+          loginBtn.classList.remove('hidden');
+          loginPage.classList.remove('hidden');
+          dashboard.classList.add('hidden');
+          landingPage.classList.add('hidden');
+          updateAdminUI(null);
+          clearPoints();
+        }
+      }
+
+      function clearPoints() {
+        document.getElementById('points-brotherhood').textContent = '–';
+        document.getElementById('points-professional').textContent = '–';
+        document.getElementById('points-service').textContent = '–';
+        document.getElementById('points-general').textContent = '–';
+        document.getElementById('points-overall').textContent = '–';
+      }
+
+      async function refreshMyPoints() {
+        try {
+          const { summary } = await api('/api/my-points');
+          document.getElementById('points-brotherhood').textContent = summary.brotherhood ?? 0;
+          document.getElementById('points-professional').textContent = summary.professional ?? 0;
+          document.getElementById('points-service').textContent = summary.service ?? 0;
+          document.getElementById('points-general').textContent = summary.general ?? 0;
+          document.getElementById('points-overall').textContent = summary.overall ?? 0;
+        } catch {
+          clearPoints();
+        }
+      }
+
+      function updateAdminUI(user) {
+        if (!user) {
+          adminRoleLabel.textContent = 'Signed out';
+          addMemberPanel.classList.add('hidden');
+          attendancePanel.classList.add('hidden');
+          resetPanel.classList.add('hidden');
+          vpcommsActions.classList.add('hidden');
+          leadershipActions.classList.add('hidden');
+          allMembersPage.classList.add('hidden');
+          attendancePopup.classList.add('hidden');
+          const popupAttendanceUsers = document.getElementById('attendance-users');
+          if (popupAttendanceUsers) {
+            popupAttendanceUsers.innerHTML =
+              '<div class="px-3 py-2 text-xs text-gray-600">Sign in as an admin to load users.</div>';
+          }
+          return;
+        }
+
+        const role = user.role_level;
+        if (role >= 3) {
+          adminRoleLabel.textContent = 'VP Communications (Exec)';
+          vpcommsActions.classList.remove('hidden');
+          addMemberBtn.classList.remove('hidden');
+          viewAllPointsBtn.classList.remove('hidden');
+          leadershipActions.classList.remove('hidden');
+        } else if (role >= 2) {
+          adminRoleLabel.textContent = 'Exec (View points & attendance)';
+          vpcommsActions.classList.remove('hidden');
+          addMemberBtn.classList.add('hidden');
+          viewAllPointsBtn.classList.remove('hidden');
+          leadershipActions.classList.remove('hidden');
+        } else if (role >= 1) {
+          adminRoleLabel.textContent = 'Leadership';
+          vpcommsActions.classList.add('hidden');
+          leadershipActions.classList.remove('hidden');
+        } else {
+          adminRoleLabel.textContent = 'Member';
+          vpcommsActions.classList.add('hidden');
+          leadershipActions.classList.add('hidden');
+        }
+
+        addMemberPanel.classList.toggle('hidden', role < 3);
+        attendancePanel.classList.add('hidden'); // Always hidden, using popup instead
+        resetPanel.classList.toggle('hidden', role < 3);
+        
+        // Hide "My Points" section for level 1+ members
+        const myPointsSection = document.getElementById('my-points-section');
+        if (myPointsSection) {
+          myPointsSection.classList.toggle('hidden', role >= 1);
+        }
+      }
+
+      let allUsersList = [];
+      let filteredUsersList = [];
+      let selectedUserIds = new Set(); // Track selected user IDs across searches
+
+      async function loadUsersForAttendance() {
+        // Make sure we're targeting the popup's attendance-users element
+        const popupAttendanceUsers = document.getElementById('attendance-users');
+        if (!popupAttendanceUsers) {
+          console.error('attendance-users element not found');
+          return;
+        }
+        
+        try {
+          popupAttendanceUsers.innerHTML = '<div class="px-3 py-2 text-xs text-gray-600">Loading members...</div>';
+          const { users } = await api('/api/users');
+          if (!users || !users.length) {
+            popupAttendanceUsers.innerHTML =
+              '<div class="px-3 py-2 text-xs text-gray-600">No users yet. Create some first.</div>';
+            allUsersList = [];
+            filteredUsersList = [];
+            return;
+          }
+          // Only show level 0 members (regular members) in attendance
+          allUsersList = users.filter((u) => u.is_active && u.role_level < 1);
+          filteredUsersList = [...allUsersList];
+          
+          if (allUsersList.length === 0) {
+            popupAttendanceUsers.innerHTML =
+              '<div class="px-3 py-2 text-xs text-gray-600">No regular members found. Only level 0 members appear in attendance.</div>';
+            selectedUserIds.clear(); // Clear selections if no users
+            return;
+          }
+          
+          renderAttendanceUsers();
+        } catch (e) {
+          console.error('Error loading users for attendance:', e);
+          popupAttendanceUsers.innerHTML =
+            '<div class="px-3 py-2 text-xs text-red-400">Failed to load users: ' + (e.message || 'Unknown error') + '</div>';
+        }
+      }
+
+      function renderAttendanceUsers() {
+        const popupAttendanceUsers = document.getElementById('attendance-users');
+        if (!popupAttendanceUsers) {
+          console.error('attendance-users element not found in renderAttendanceUsers');
+          return;
+        }
+        
+        if (filteredUsersList.length === 0) {
+          popupAttendanceUsers.innerHTML =
+            '<div class="px-3 py-2 text-xs text-gray-600">No members match your search.</div>';
+          return;
+        }
+        
+        // Render checkboxes, preserving selected state
+        popupAttendanceUsers.innerHTML = filteredUsersList
+          .map(
+            (u) => {
+              const isChecked = selectedUserIds.has(u.id);
+              return `
+              <label class="flex items-center gap-2 px-3 py-2 border-b border-gray-300 hover:bg-gray-100 cursor-pointer">
+                <input type="checkbox" class="attendance-checkbox" value="${u.id}" ${isChecked ? 'checked' : ''} />
+                <span class="text-black text-sm">${u.name} <span class="text-gray-600 ml-1 text-xs">${u.username}</span></span>
+              </label>
+            `;
+            }
+          )
+          .join('');
+        
+        // Re-attach event listeners to update selectedUserIds when checkboxes change
+        popupAttendanceUsers.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const userId = Number(e.target.value);
+            if (e.target.checked) {
+              selectedUserIds.add(userId);
+            } else {
+              selectedUserIds.delete(userId);
+            }
+            console.log('Selected user IDs:', Array.from(selectedUserIds));
+          });
+        });
+      }
+
+      // Search functionality for attendance popup
+      searchAttendanceInput?.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        if (!searchTerm) {
+          filteredUsersList = [...allUsersList];
+        } else {
+          filteredUsersList = allUsersList.filter((u) =>
+            u.name.toLowerCase().includes(searchTerm) ||
+            u.username.toLowerCase().includes(searchTerm)
+          );
+        }
+        // Re-render with preserved selections
+        renderAttendanceUsers();
+      });
+
+      // Password change form (shown in dashboard when needed)
+      const changePasswordForm = document.createElement('div');
+      changePasswordForm.id = 'change-password-form';
+      changePasswordForm.className =
+        'fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden';
+      changePasswordForm.innerHTML = `
+        <div class="bg-white border-2 border-pct-navy rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <h3 class="text-xl font-bold text-pct-navy mb-2">Change Password</h3>
+          <p class="text-sm text-gray-600 mb-4">For security, please change your initial password.</p>
+          <form id="change-password-form-inner" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Current password</label>
+              <input id="current-password" type="password" class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black" required />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">New password</label>
+              <input id="new-password" type="password" class="w-full rounded-md bg-white border-2 border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pct-navy focus:border-pct-navy text-black" required />
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 inline-flex justify-center items-center rounded-md bg-pct-navy hover:bg-pct-navy-dark px-4 py-2 text-sm font-semibold text-white">
+                Update password
+              </button>
+              <button type="button" id="cancel-password-change" class="flex-1 inline-flex justify-center items-center rounded-md bg-gray-200 hover:bg-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(changePasswordForm);
+
+      function showChangePassword() {
+        changePasswordForm.classList.remove('hidden');
+        // Ensure form is accessible
+        const form = document.getElementById('change-password-form-inner');
+        if (form && !form.hasAttribute('data-listener-attached')) {
+          form.setAttribute('data-listener-attached', 'true');
+          form.addEventListener('submit', handlePasswordChange);
+        }
+      }
+
+      function handlePasswordChange(e) {
+        e.preventDefault();
+        const currentPasswordInput = document.getElementById('current-password');
+        const newPasswordInput = document.getElementById('new-password');
+        const currentPassword = currentPasswordInput.value.trim();
+        const newPassword = newPasswordInput.value.trim();
+        
+        if (!currentPassword || !newPassword) {
+          showToast('Current and new password required', 'error');
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          showToast('New password must be at least 6 characters long', 'error');
+          return;
+        }
+
+        // Disable form during submission
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Updating...';
+        }
+
+        api('/api/change-password', {
+          method: 'POST',
+          body: JSON.stringify({ currentPassword, newPassword }),
+        })
+          .then(() => {
+            showToast('Password updated successfully', 'success');
+            changePasswordForm.classList.add('hidden');
+            currentPasswordInput.value = '';
+            newPasswordInput.value = '';
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Update password';
+            }
+          })
+          .catch((err) => {
+            showToast(err.message || 'Failed to update password', 'error');
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Update password';
+            }
+          });
+      }
+
+      // Cancel button handler
+      changePasswordForm.addEventListener('click', (e) => {
+        if (e.target.id === 'cancel-password-change' || e.target === changePasswordForm) {
+          changePasswordForm.classList.add('hidden');
+          const currentPwd = document.getElementById('current-password');
+          const newPwd = document.getElementById('new-password');
+          if (currentPwd) currentPwd.value = '';
+          if (newPwd) newPwd.value = '';
+        }
+      });
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const loginIdentifier = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const isEmail = loginIdentifier.includes('@');
+        
+        loginError.classList.add('hidden');
+        loginError.textContent = '';
+        
+        try {
+          const result = await api('/api/login', {
+            method: 'POST',
+            body: JSON.stringify(
+              isEmail ? { email: loginIdentifier, password } : { username: loginIdentifier, password }
+            ),
+          });
+          
+          // Successfully logged in - refresh to show dashboard
+          showToast('Logged in successfully', 'success');
+          
+          // VP Comms (level 3) should NOT be prompted to change password
+          if (result.must_change_password && result.user.role_level < 3) {
+            // Show password change prompt in dashboard
+            setTimeout(() => {
+              showChangePassword();
+            }, 500);
+          }
+          
+          await refreshMe();
+        } catch (e) {
+          loginError.textContent = e.message || 'Invalid credentials. Please try again.';
+          loginError.classList.remove('hidden');
+          showToast(e.message, 'error');
+        }
+      });
+
+      loginBtn?.addEventListener('click', () => {
+        loginPage.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+      });
+
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await api('/api/logout', { method: 'POST' });
+          showToast('Logged out', 'success');
+          await refreshMe();
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      });
+
+      // VP Comms actions
+      addMemberBtn?.addEventListener('click', () => {
+        addMemberPanel.classList.remove('hidden');
+      });
+
+      closeAddMember?.addEventListener('click', () => {
+        addMemberPanel.classList.add('hidden');
+      });
+
+      viewAllPointsBtn?.addEventListener('click', async () => {
+        dashboard.classList.add('hidden');
+        allMembersPage.classList.remove('hidden');
+        searchMembersInput.value = '';
+        await loadAllMembersPointsPage();
+      });
+
+      closeAllMembersPage?.addEventListener('click', () => {
+        allMembersPage.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        searchMembersInput.value = '';
+        filteredMembersData = [...allMembersData];
+        renderAllMembersGrid();
+      });
+
+      // Leadership actions
+      takeAttendanceBtn?.addEventListener('click', async () => {
+        editingEventId = null;
+        attendancePopupTitle.textContent = 'Take Attendance';
+        saveEventBtn.textContent = 'Save Event & Attendance';
+        createEventForm.reset();
+        searchAttendanceInput.value = '';
+        selectedUserIds.clear(); // Clear selections when opening for new event
+        attendancePopup.classList.remove('hidden');
+        await loadUsersForAttendance();
+      });
+
+      editEventsBtn?.addEventListener('click', async () => {
+        eventsListModal.classList.remove('hidden');
+        await loadEventsList();
+      });
+
+      closeEventsListModal?.addEventListener('click', () => {
+        eventsListModal.classList.add('hidden');
+      });
+
+      // Close events modal when clicking outside
+      eventsListModal?.addEventListener('click', (e) => {
+        if (e.target === eventsListModal) {
+          eventsListModal.classList.add('hidden');
+        }
+      });
+
+      closeAttendancePopup?.addEventListener('click', () => {
+        attendancePopup.classList.add('hidden');
+        createEventForm.reset();
+        searchAttendanceInput.value = '';
+        selectedUserIds.clear(); // Clear selections when closing
+        filteredUsersList = [...allUsersList];
+        renderAttendanceUsers();
+        editingEventId = null;
+        attendancePopupTitle.textContent = 'Take Attendance';
+        saveEventBtn.textContent = 'Save Event & Attendance';
+      });
+
+      cancelAttendance?.addEventListener('click', () => {
+        attendancePopup.classList.add('hidden');
+        createEventForm.reset();
+        searchAttendanceInput.value = '';
+        selectedUserIds.clear(); // Clear selections when canceling
+        filteredUsersList = [...allUsersList];
+        renderAttendanceUsers();
+        editingEventId = null;
+        attendancePopupTitle.textContent = 'Take Attendance';
+        saveEventBtn.textContent = 'Save Event & Attendance';
+      });
+
+      // Search functionality for all members page
+      let allMembersData = [];
+      let filteredMembersData = [];
+
+      searchMembersInput?.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        if (!searchTerm) {
+          filteredMembersData = [...allMembersData];
+        } else {
+          filteredMembersData = allMembersData.filter((m) =>
+            m.name.toLowerCase().includes(searchTerm) ||
+            m.username.toLowerCase().includes(searchTerm) ||
+            (m.email && m.email.toLowerCase().includes(searchTerm))
+          );
+        }
+        renderAllMembersGrid();
+      });
+
+      async function loadAllMembersPointsPage() {
+        try {
+          const { members } = await api('/api/all-members-points');
+          if (!members.length) {
+            allMembersGrid.innerHTML =
+              '<div class="col-span-full px-4 py-8 text-center text-gray-600">No members found.</div>';
+            return;
+          }
+          // Backend already filters to only level 0 members
+          allMembersData = members;
+          filteredMembersData = [...members];
+          renderAllMembersGrid();
+        } catch (e) {
+          allMembersGrid.innerHTML =
+            '<div class="col-span-full px-4 py-8 text-center text-red-600">Failed to load: ' + e.message + '</div>';
+        }
+      }
+
+      function renderAllMembersGrid() {
+        if (filteredMembersData.length === 0) {
+          allMembersGrid.innerHTML =
+            '<div class="col-span-full px-4 py-8 text-center text-gray-600">No members match your search.</div>';
+          return;
+        }
+        allMembersGrid.innerHTML = filteredMembersData
+          .map(
+            (m) => `
+            <div class="bg-white border-2 border-pct-navy rounded-xl p-5 shadow-lg">
+              <div class="font-bold text-lg text-pct-navy mb-1">${m.name}</div>
+              <div class="text-sm text-gray-600 mb-4">${m.username}${m.email ? ' · ' + m.email : ''}</div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="bg-gray-50 border border-pct-navy/30 rounded-lg p-2">
+                  <div class="text-xs text-gray-600 uppercase">Brotherhood</div>
+                  <div class="text-xl font-bold text-pct-navy">${m.points.brotherhood}</div>
+                </div>
+                <div class="bg-gray-50 border border-pct-navy/30 rounded-lg p-2">
+                  <div class="text-xs text-gray-600 uppercase">Professional</div>
+                  <div class="text-xl font-bold text-pct-navy">${m.points.professional}</div>
+                </div>
+                <div class="bg-gray-50 border border-pct-navy/30 rounded-lg p-2">
+                  <div class="text-xs text-gray-600 uppercase">Service</div>
+                  <div class="text-xl font-bold text-pct-navy">${m.points.service}</div>
+                </div>
+                <div class="bg-gray-50 border border-pct-navy/30 rounded-lg p-2">
+                  <div class="text-xs text-gray-600 uppercase">General</div>
+                  <div class="text-xl font-bold text-pct-navy">${m.points.general}</div>
+                </div>
+              </div>
+              <div class="bg-pct-navy rounded-lg p-3 text-center">
+                <div class="text-xs text-white uppercase mb-1">Overall</div>
+                <div class="text-2xl font-bold text-white">${m.points.overall}</div>
+              </div>
+            </div>
+          `
+          )
+          .join('');
+      }
+
+      createUserForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Prevent double submission
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn && submitBtn.disabled) {
+          return;
+        }
+        
+        // Disable button during submission
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          const originalText = submitBtn.textContent;
+          submitBtn.textContent = 'Creating...';
+        }
+        
+        try {
+          const name = document.getElementById('create-user-name').value.trim();
+          const username = document.getElementById('create-user-username').value.trim();
+          const email = document.getElementById('create-user-email').value.trim();
+          const password = document.getElementById('create-user-password').value;
+          const role_level = Number(document.getElementById('create-user-role').value);
+          
+          if (!name || !username || !password) {
+            showToast('Name, username, and password required', 'error');
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Create Member';
+            }
+            return;
+          }
+          
+          console.log('Creating user:', { name, username, email, role_level });
+          
+          await api('/api/users', {
+            method: 'POST',
+            body: JSON.stringify({ name, username, email, password, role_level }),
+          });
+          
+          showToast('Member created successfully', 'success');
+          createUserForm.reset();
+          addMemberPanel.classList.add('hidden');
+          await loadUsersForAttendance();
+          if (role_level >= 2 && allMembersPage && !allMembersPage.classList.contains('hidden')) {
+            await loadAllMembersPointsPage();
+          }
+        } catch (e) {
+          console.error('Error creating user:', e);
+          showToast(e.message || 'Failed to create member. Please check console for details.', 'error');
+        } finally {
+          // Re-enable button
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Member';
+          }
+        }
+      });
+
+      createEventForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Prevent double submission
+        const submitBtn = document.getElementById('save-event-btn');
+        if (submitBtn.disabled) {
+          return;
+        }
+        
+        // Disable button during submission
+        submitBtn.disabled = true;
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Saving...';
+        
+        try {
+          const name = document.getElementById('event-name').value.trim();
+          const category = document.getElementById('event-category').value;
+          const date = document.getElementById('event-date').value;
+          const points = Number(document.getElementById('event-points').value);
+          
+          // Get the attendance users container from the popup
+          const popupAttendanceUsers = document.getElementById('attendance-users');
+          if (!popupAttendanceUsers) {
+            showToast('Error: Could not find attendance list', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+          
+          // Get selected user IDs from the Set (more reliable than querying DOM)
+          const presentUserIds = Array.from(selectedUserIds);
+
+          console.log('Creating event with presentUserIds:', presentUserIds);
+          console.log('Total selected members:', presentUserIds.length);
+          console.log('Total members in list:', allUsersList.length);
+
+          if (!name || !category || !date || !Number.isFinite(points)) {
+            showToast('Fill out all event fields', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+
+          if (presentUserIds.length === 0) {
+            if (!confirm('No members selected as present. Continue anyway?')) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+              return;
+            }
+          }
+
+          const mandatory = document.getElementById('event-mandatory').checked;
+          const isEditing = editingEventId !== null;
+          const url = isEditing ? `/api/events/${editingEventId}` : '/api/events';
+          const method = isEditing ? 'PUT' : 'POST';
+          
+          const eventData = { name, category, date, points, presentUserIds, mandatory };
+          console.log('Sending event data:', eventData);
+          
+          await api(url, {
+            method: method,
+            body: JSON.stringify(eventData),
+          });
+          
+          showToast(isEditing ? 'Event & attendance updated' : 'Event & attendance saved', 'success');
+          
+          // Close popup first
+          attendancePopup.classList.add('hidden');
+          
+          // Reset form and state
+          createEventForm.reset();
+          searchAttendanceInput.value = '';
+          selectedUserIds.clear(); // Clear selections after saving
+          filteredUsersList = [...allUsersList];
+          renderAttendanceUsers();
+          editingEventId = null;
+          attendancePopupTitle.textContent = 'Take Attendance';
+          saveEventBtn.textContent = 'Save Event & Attendance';
+          
+          // Re-enable button
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          
+          // Small delay to ensure database transaction completes
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Get current user to determine what to refresh
+          try {
+            const { user } = await api('/api/me');
+            
+            if (!user) {
+              console.error('No user found for refresh');
+              return;
+            }
+            
+            console.log('Refreshing data for user level:', user.role_level);
+            
+            // Refresh points for level 0 members (regular members)
+            if (user.role_level < 1) {
+              console.log('Refreshing personal points');
+              await refreshMyPoints();
+            }
+            
+            // Always refresh all members points data for level 2+ users (they can view it)
+            // Refresh regardless of visibility so data is up-to-date when user opens the tab
+            if (user.role_level >= 2) {
+              console.log('Refreshing all members points page');
+              await loadAllMembersPointsPage();
+              console.log('All members points page data refreshed');
+            }
+            
+            // Always refresh events list for level 1+ users (they can view/edit events)
+            // Refresh regardless of visibility so data is up-to-date when user opens the tab
+            if (user.role_level >= 1) {
+              console.log('Refreshing events list');
+              await loadEventsList();
+              console.log('Events list data refreshed');
+            }
+          } catch (e) {
+            console.error('Error refreshing data:', e);
+            // Don't show error toast as the save was successful, just log it
+          }
+        } catch (e) {
+          console.error('Error saving event:', e);
+          showToast(e.message || 'Failed to save event. Please try again.', 'error');
+          // Re-enable button on error
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
+
+      resetBtn.addEventListener('click', async () => {
+        if (!confirm('This will delete ALL events and attendance records. Continue?')) return;
+        try {
+          await api('/api/reset-semester', { method: 'POST' });
+          showToast('Events and attendance wiped', 'success');
+          
+          // Small delay to ensure database transaction completes
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Get current user to determine what to refresh
+          try {
+            const { user } = await api('/api/me');
+            
+            if (!user) return;
+            
+            // Refresh points for level 0 members
+            if (user.role_level < 1) {
+              await refreshMyPoints();
+            }
+            
+            // Always refresh all members points data for level 2+ users
+            if (user.role_level >= 2) {
+              await loadAllMembersPointsPage();
+            }
+            
+            // Always refresh events list for level 1+ users
+            if (user.role_level >= 1) {
+              await loadEventsList();
+            }
+          } catch (e) {
+            console.error('Error refreshing points:', e);
+          }
+        } catch (e) {
+          showToast(e.message, 'error');
+        }
+      });
+
+      async function loadEventsList() {
+        try {
+          const { events } = await api('/api/events');
+          if (!events || events.length === 0) {
+            eventsList.innerHTML = '<div class="px-4 py-3 text-gray-600">No events yet.</div>';
+            return;
+          }
+          
+          eventsList.innerHTML = events.map(event => {
+            const eventDate = new Date(event.date);
+            const formattedDate = eventDate.toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+            
+            // Only show edit/delete buttons if user can edit/delete this event
+            const editButton = event.canEdit ? `
+              <button
+                class="edit-event-btn px-4 py-2 bg-pct-navy hover:bg-pct-navy-dark text-white rounded-md text-sm font-semibold"
+                data-event-id="${event.id}"
+              >
+                Edit
+              </button>
+            ` : '';
+            
+            const deleteButton = event.canDelete ? `
+              <button
+                class="delete-event-btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-semibold"
+                data-event-id="${event.id}"
+              >
+                Delete
+              </button>
+            ` : '';
+            
+            const actionButtons = (editButton || deleteButton) ? `
+              <div class="flex gap-2 ml-4">
+                ${editButton}
+                ${deleteButton}
+              </div>
+            ` : `
+              <span class="ml-4 px-4 py-2 text-gray-400 text-sm">Cannot edit</span>
+            `;
+            
+            const mandatoryBadge = event.mandatory
+              ? '<span class="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">Mandatory (absent = -1 pt)</span>'
+              : '';
+            return `
+              <div class="bg-white border-2 border-pct-navy rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-lg text-pct-navy mb-1">${event.name} ${mandatoryBadge}</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                      <div><span class="font-medium">Category:</span> ${event.category.charAt(0).toUpperCase() + event.category.slice(1)}</div>
+                      <div><span class="font-medium">Date:</span> ${formattedDate}</div>
+                      <div><span class="font-medium">Points:</span> ${event.mandatory ? '0 (attend) / -1 (absent)' : event.points}</div>
+                    </div>
+                  </div>
+                  ${actionButtons}
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          // Attach event listeners to edit buttons
+          eventsList.querySelectorAll('.edit-event-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const eventId = Number(btn.getAttribute('data-event-id'));
+              await openEventForEditing(eventId);
+            });
+          });
+          
+          // Attach event listeners to delete buttons
+          eventsList.querySelectorAll('.delete-event-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const eventId = Number(btn.getAttribute('data-event-id'));
+              await deleteEvent(eventId);
+            });
+          });
+        } catch (e) {
+          eventsList.innerHTML = `<div class="px-4 py-3 text-red-600">Failed to load events: ${e.message}</div>`;
+        }
+      }
+
+      async function openEventForEditing(eventId) {
+        try {
+          const { event } = await api(`/api/events/${eventId}`);
+          
+          // Check if user can edit this event
+          if (!event.canEdit) {
+            showToast('You can only edit events you created', 'error');
+            return;
+          }
+          
+          editingEventId = eventId;
+          attendancePopupTitle.textContent = `Edit Event: ${event.name}`;
+          saveEventBtn.textContent = 'Update Event & Attendance';
+          
+          // Populate form fields
+          document.getElementById('event-name').value = event.name;
+          document.getElementById('event-category').value = event.category;
+          document.getElementById('event-date').value = new Date(event.date).toISOString().slice(0, 16);
+          document.getElementById('event-points').value = event.points;
+          document.getElementById('event-mandatory').checked = !!event.mandatory;
+          
+          // Load users and check those who were present
+          await loadUsersForAttendance();
+          
+          // Set selected user IDs from the event
+          if (event.presentUserIds && event.presentUserIds.length > 0) {
+            selectedUserIds = new Set(event.presentUserIds.map(id => Number(id)));
+            console.log('Set selected user IDs for editing:', Array.from(selectedUserIds));
+            // Re-render to show checkboxes as checked
+            renderAttendanceUsers();
+          } else {
+            selectedUserIds.clear();
+            renderAttendanceUsers();
+          }
+          
+          // Close events list modal and open attendance popup
+          eventsListModal.classList.add('hidden');
+          attendancePopup.classList.remove('hidden');
+        } catch (e) {
+          showToast('Failed to load event: ' + e.message, 'error');
+        }
+      }
+
+      async function deleteEvent(eventId) {
+        if (!confirm('Are you sure you want to delete this event? This will also delete all attendance records for this event and cannot be undone.')) {
+          return;
+        }
+        
+        try {
+          await api(`/api/events/${eventId}`, {
+            method: 'DELETE',
+          });
+          
+          showToast('Event deleted successfully', 'success');
+          
+          // Reload events list
+          await loadEventsList();
+          
+          // Refresh points data if needed
+          try {
+            const { user } = await api('/api/me');
+            if (user) {
+              if (user.role_level < 1) {
+                await refreshMyPoints();
+              }
+              if (user.role_level >= 2) {
+                await loadAllMembersPointsPage();
+              }
+            }
+          } catch (e) {
+            console.error('Error refreshing points after delete:', e);
+          }
+        } catch (e) {
+          showToast('Failed to delete event: ' + e.message, 'error');
+        }
+      }
+
+      // Initialize: show login page by default
+      loginPage.classList.remove('hidden');
+      dashboard.classList.add('hidden');
+      allMembersPage.classList.add('hidden');
+      attendancePopup.classList.add('hidden');
+      loginBtn.classList.remove('hidden');
+      logoutBtn.classList.add('hidden');
+      
+      refreshMe();
+    </script>
+  </body>
+</html>
