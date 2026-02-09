@@ -276,6 +276,23 @@ app.post('/api/change-password', authRequired, (req, res) => {
   res.json({ ok: true });
 });
 
+// --- VP Comms: reset a user's password (admin only) ---
+app.post('/api/users/:id/reset-password', authRequired, refreshUserRole, requireRole(3), (req, res) => {
+  const userId = Number(req.params.id);
+  const { newPassword } = req.body;
+  const trimmed = String(newPassword || '').trim();
+  if (trimmed.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+  }
+  const user = db.fetchOneUserSafe(userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  const newHash = bcrypt.hashSync(trimmed, 10);
+  db.updateUserPassword(userId, newHash);
+  res.json({ message: 'Password reset successfully.' });
+});
+
 // --- Events & attendance ---
 
 // Create event and take attendance in one call (level 1+)

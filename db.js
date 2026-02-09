@@ -118,6 +118,7 @@ function initSchema() {
       FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
     );
   `);
+
 }
 
 initSchema();
