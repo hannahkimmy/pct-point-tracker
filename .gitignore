@@ -9,6 +9,13 @@ node_modules/
 *.sqlite3
 *.db
 
+# Exported data (contains sensitive info)
+exported-*.json
+exported-all.json
+exported-users.csv
+backup.sql
+pcpoints-backup.sqlite
+
 # Logs
 *.log
 npm-debug.log*

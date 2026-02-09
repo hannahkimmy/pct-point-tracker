@@ -17,17 +17,46 @@ git push -u origin main
 3. Select your repository
 4. Railway auto-detects Node.js and starts deploying
 
-### Step 3: Set Environment Variables
-1. Click on your project → Variables tab
-2. Add these variables:
-   - `JWT_SECRET`: Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-   - `NODE_ENV`: `production`
+### Step 3: Set Up Persistent Storage (IMPORTANT!)
+**Your database will be wiped on each deploy unless you do this:**
+
+1. **Create a Volume:**
+   - Railway Dashboard → Your Project → **+ New** → **Volume**
+   - Name: `pcpoints-data`
+   - Mount path: `/data`
+
+2. **Set Environment Variables:**
+   - Go to your service → **Variables** tab
+   - Add these variables:
+     - `JWT_SECRET`: Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+     - `NODE_ENV`: `production`
+     - `DATABASE_PATH`: `/data/pcpoints.sqlite` ← **This makes your database persist!**
 
 ### Step 4: Get Your URL
 1. Railway provides a public URL automatically
 2. Click "Settings" → "Generate Domain" for a custom domain (optional)
 
-### Step 5: Bootstrap Admin Account
+### Step 5: Migrate Your Local Data (Optional but Recommended!)
+
+If you have users/data in your local database that you want to keep:
+
+**Option A: Export and Import (Recommended)**
+1. **On your local machine**, export your data:
+   ```bash
+   npm run export:data
+   ```
+   This creates `exported-users.json`, `exported-events.json`, and `exported-attendance.json`
+
+2. **Upload these files** to your Railway deployment:
+   - Use Railway's file browser or SSH
+   - Or add them temporarily to your repo (then remove after import)
+
+3. **In Railway**, run the import:
+   ```bash
+   npm run import:data
+   ```
+
+**Option B: Bootstrap New Admin (if you don't have local data)**
 1. Visit: `https://your-app-url.railway.app/api/bootstrap-admin`
 2. Use a tool like Postman or curl:
    ```bash
@@ -43,7 +72,7 @@ git push -u origin main
 3. This creates the VP Comms (level 3) admin account
 
 ### Step 6: Login and Use!
-Visit your Railway URL and login with the credentials you just created.
+Visit your Railway URL and login with your existing credentials (if you migrated) or the new admin account.
 
 ---
 

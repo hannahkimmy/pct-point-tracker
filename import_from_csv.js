@@ -11,7 +11,13 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
 
-const CSV_FILE = path.join(__dirname, 'Fall 25 Active Directory-Grid view.csv');
+// Allow CSV path from command line: node import_from_csv.js [path/to/file.csv]
+// Otherwise try: members.csv, then Fall 25 Active Directory-Grid view.csv
+const CSV_FILE = process.argv[2]
+  ? path.resolve(process.cwd(), process.argv[2])
+  : (fs.existsSync(path.join(__dirname, 'members.csv'))
+      ? path.join(__dirname, 'members.csv')
+      : path.join(__dirname, 'Fall 25 Active Directory-Grid view.csv'));
 
 function parseCsv(text) {
   const rows = [];
@@ -63,13 +69,20 @@ function parseCsv(text) {
 function main() {
   if (!fs.existsSync(CSV_FILE)) {
     console.error('CSV file not found:', CSV_FILE);
+    console.error('Usage: node import_from_csv.js [path/to/members.csv]');
+    console.error('Or add a file named members.csv in the project root and run: npm run import:csv');
     process.exit(1);
   }
 
-  const text = fs.readFileSync(CSV_FILE, 'utf8');
+  const text = fs.readFileSync(CSV_FILE, 'utf8').trim();
+  if (!text.length) {
+    console.error('CSV file is empty (0 bytes). Make sure the file has content.');
+    process.exit(1);
+  }
+
   const rows = parseCsv(text);
   if (!rows.length) {
-    console.error('CSV file is empty');
+    console.error('CSV file could not be parsed (no rows). Check that it has a header row and "First Name", "Last Name", "Net ID" columns.');
     process.exit(1);
   }
 

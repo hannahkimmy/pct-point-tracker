@@ -7,8 +7,17 @@
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
     "import:csv": "node import_from_csv.js",
+    "import:csv:members": "node import_from_csv.js members.csv",
     "seed:vpcomms": "node seed_vpcomms.js",
-    "migrate:emails": "node migrate_emails.js"
+    "migrate:emails": "node migrate_emails.js",
+    "export:data": "node export-data.js",
+    "export:sql": "node export-sql.js",
+    "export:csv": "node export-csv.js",
+    "export:single": "node export-single-json.js",
+    "import:data": "node import-data.js",
+    "import:single": "node import-from-single-json.js",
+    "verify:import": "node verify-import.js",
+    "restore:url": "node restore-from-url.js"
   },
   "keywords": ["attendance", "points", "fraternity", "express", "sqlite"],
   "author": "",

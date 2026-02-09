@@ -1,9 +1,28 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 // Use SQLite for now (works on most platforms with persistent storage)
 // For PostgreSQL migration, see DEPLOYMENT.md
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'pcpoints.sqlite');
+
+// Ensure the directory exists (e.g. /data for Railway volumes)
+// On Railway, /data should already exist from volume mount, so we skip creating root-level dirs
+const dbDir = path.dirname(dbPath);
+const isRootLevel = path.isAbsolute(dbDir) && dbDir.split(path.sep).length <= 2; // e.g., /data or C:\data
+
+if (dbDir !== '.' && !isRootLevel && !fs.existsSync(dbDir)) {
+  try {
+    fs.mkdirSync(dbDir, { recursive: true });
+  } catch (e) {
+    // If directory creation fails, that's okay - on Railway /data exists from volume,
+    // and better-sqlite3 will give a clearer error if the directory truly doesn't exist
+    if (e.code !== 'EEXIST') {
+      console.warn(`Warning: Could not create directory ${dbDir}: ${e.message}`);
+    }
+  }
+}
+
 const db = new Database(dbPath);
 
 /**
