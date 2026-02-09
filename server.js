@@ -20,8 +20,7 @@ app.use(
   })
 );
 
-// Serve static frontend
-app.use(express.static(path.join(__dirname, 'public')));
+// API routes defined below - static middleware moved to after API routes
 
 // --- Helpers ---
 
@@ -120,10 +119,20 @@ app.post('/api/login', (req, res) => {
     )
     .get(loginIdentifier, loginIdentifier);
 
-  if (!user || !user.is_active) return res.status(400).json({ error: 'Invalid credentials' });
+  if (!user) {
+    console.log('Login failed: no user found for', loginIdentifier.includes('@') ? 'email' : 'username');
+    return res.status(400).json({ error: 'Invalid credentials' });
+  }
+  if (!user.is_active) {
+    console.log('Login failed: user inactive', user.id);
+    return res.status(400).json({ error: 'Invalid credentials' });
+  }
 
   const valid = bcrypt.compareSync(trimmedPassword, user.password_hash);
-  if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
+  if (!valid) {
+    console.log('Login failed: wrong password for user id', user.id);
+    return res.status(400).json({ error: 'Invalid credentials' });
+  }
 
   const token = createToken(user);
   const safeUser = {
@@ -137,8 +146,11 @@ app.post('/api/login', (req, res) => {
   // VP Comms (level 3) should NOT be prompted to change password
   const shouldChangePassword = user.role_level < 3 && user.must_change_password;
 
+  const cookieOpts = { httpOnly: true, sameSite: 'lax' };
+  if (process.env.NODE_ENV === 'production') cookieOpts.secure = true;
+
   res
-    .cookie(JWT_COOKIE_NAME, token, { httpOnly: true, sameSite: 'lax' })
+    .cookie(JWT_COOKIE_NAME, token, cookieOpts)
     .json({ user: safeUser, must_change_password: shouldChangePassword });
 });
 
@@ -598,6 +610,30 @@ app.post('/api/reset-semester', authRequired, requireRole(3), (req, res) => {
   db.exec('DELETE FROM attendance; DELETE FROM events;');
   res.json({ ok: true });
 });
+
+// Diagnostic: check if DB is populated (no auth; remove or restrict in production if desired)
+app.get('/api/diagnostic', (req, res) => {
+  console.log('Diagnostic endpoint hit');
+  try {
+    const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+    const eventCount = db.prepare('SELECT COUNT(*) AS c FROM events').get().c;
+    const attendanceCount = db.prepare('SELECT COUNT(*) AS c FROM attendance').get().c;
+    console.log(`Diagnostic: ${userCount} users, ${eventCount} events, ${attendanceCount} attendance records`);
+    res.json({
+      ok: true,
+      userCount,
+      eventCount,
+      attendanceCount,
+      message: userCount === 0 ? 'Database has no users — run restore or bootstrap.' : `${userCount} users in DB.`,
+    });
+  } catch (e) {
+    console.error('Diagnostic error:', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Serve static frontend AFTER all API routes
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback: let client-side routing use index.html
 app.get('*', (req, res) => {
