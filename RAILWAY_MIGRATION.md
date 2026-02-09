@@ -53,17 +53,15 @@ This creates `backup.sql`.
 
 **Step 3 – Restore on Railway**
 
+The restore must run on Railway (where `/data` exists), not locally. The app runs it automatically on startup when `RESTORE_SQL_URL` is set.
+
 1. In Railway → your service → **Variables**, add (temporarily):
    ```bash
    RESTORE_SQL_URL=https://gist.githubusercontent.com/.../raw/.../backup.sql
    ```
    Use your actual raw URL.
 
-2. Run the restore (install [Railway CLI](https://docs.railway.app/develop/cli) and link the project first):
-   ```bash
-   railway run npm run restore:url
-   ```
-   (Or: `railway run node restore-from-url.js`.)
+2. **Deploy** (or trigger a redeploy). On startup the app will restore from the URL, then start the server. Check deploy logs for: `Restore complete: N users, ...`
 
 3. Remove `RESTORE_SQL_URL` from Variables and redeploy (so the restore isn’t run again).
 
@@ -126,7 +124,7 @@ After this, your database lives on Railway’s persistent volume and survives re
 
 ## Can't log in after restore?
 
-1. **Restore may have failed** — If your `backup.sql` was created with `sqlite3 .dump`, it contains `CREATE TABLE` statements. The restore script now **drops tables first** for that format so the backup can run. **Redeploy the latest code, then run the restore again:** `railway run npm run restore:url`. You should see something like: `Restore complete: 133 users, 4 events, ...`. If you see an error, the DB may be empty.
+1. **Restore may have failed** — Ensure `RESTORE_SQL_URL` is set and **deploy** (restore runs on startup). In deploy logs you should see: `Restore complete: N users, ...`. If you see an error or 0 users, the DB may be empty; fix the backup URL or volume and redeploy.
 
 2. **Same database** — The **web service** must have `DATABASE_PATH=/data/pcpoints.sqlite` set (and the volume mounted at `/data`). If that variable is missing, the running app uses an ephemeral DB and won't see the restored data.
 

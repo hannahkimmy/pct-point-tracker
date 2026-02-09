@@ -640,7 +640,20 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`pcpoints server running on http://localhost:${PORT}`);
-});
+// Start server (and run restore on Railway if RESTORE_SQL_URL is set)
+(async () => {
+  if (process.env.RESTORE_SQL_URL) {
+    const { runRestoreFromUrl } = require('./restore-from-url');
+    try {
+      await runRestoreFromUrl(db, process.env.RESTORE_SQL_URL);
+      console.log('Startup restore done. Remove RESTORE_SQL_URL from Railway Variables and redeploy.');
+    } catch (e) {
+      console.error('Startup restore failed:', e.message);
+      process.exit(1);
+    }
+  }
+  app.listen(PORT, () => {
+    console.log(`pcpoints server running on http://localhost:${PORT}`);
+  });
+})();
 

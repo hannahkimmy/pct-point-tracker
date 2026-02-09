@@ -1,9 +1,11 @@
 # Fix: Database Persisting on Railway
 
 ## The Problem
-Railway's filesystem is **ephemeral** - files get wiped on each deployment. Your `pcpoints.sqlite` database file is being deleted every time Railway redeploys.
+Railway's filesystem is **ephemeral** — files get wiped on each deployment. Your `pcpoints.sqlite` database file is deleted every time Railway redeploys, so the database is **not** persistent by default.
 
-## The Solution: Use Railway Persistent Storage
+## The Solution: Use a Railway Volume
+
+Once you use a Volume and point the app at it with `DATABASE_PATH`, the database file lives on that volume. **The database then persists regardless of new deployments** — redeploys only replace app code, not the volume data.
 
 ### Option 1: Railway Volume (Recommended)
 
@@ -45,4 +47,6 @@ Some Railway plans include persistent disk. Check your service settings for "Per
    npm run import:csv:members
    ```
 
-Now your database will persist across deployments! 🎉
+Now your database will persist across deployments.
+
+For the full flow (persistent DB **and** restoring your local logins to Railway), see **RAILWAY_SETUP.md**.

@@ -8,18 +8,22 @@ const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'pcpoints.sqlit
 console.log('Database path:', dbPath);
 
 // Ensure the directory exists (e.g. /data for Railway volumes)
-// On Railway, /data should already exist from volume mount, so we skip creating root-level dirs
+// On Railway, /data should already exist from volume mount
 const dbDir = path.dirname(dbPath);
 const isRootLevel = path.isAbsolute(dbDir) && dbDir.split(path.sep).length <= 2; // e.g., /data or C:\data
 
-if (dbDir !== '.' && !isRootLevel && !fs.existsSync(dbDir)) {
+if (dbDir !== '.' && !fs.existsSync(dbDir)) {
   try {
     fs.mkdirSync(dbDir, { recursive: true });
   } catch (e) {
-    // If directory creation fails, that's okay - on Railway /data exists from volume,
-    // and better-sqlite3 will give a clearer error if the directory truly doesn't exist
+    // If directory creation fails, better-sqlite3 will give a clearer error
     if (e.code !== 'EEXIST') {
-      console.warn(`Warning: Could not create directory ${dbDir}: ${e.message}`);
+      console.error(`Error: Could not create directory ${dbDir}: ${e.message}`);
+      if (isRootLevel) {
+        console.error(`Note: Creating root-level directories like ${dbDir} may require sudo permissions.`);
+        console.error(`For local testing, unset DATABASE_PATH or use a local path.`);
+      }
+      throw e;
     }
   }
 }
