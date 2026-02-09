@@ -5,6 +5,7 @@ const fs = require('fs');
 // Use SQLite for now (works on most platforms with persistent storage)
 // For PostgreSQL migration, see DEPLOYMENT.md
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'pcpoints.sqlite');
+console.log('Database path:', dbPath);
 
 // Ensure the directory exists (e.g. /data for Railway volumes)
 // On Railway, /data should already exist from volume mount, so we skip creating root-level dirs

@@ -10,6 +10,11 @@
  */
 
 const db = require('./db');
+const path = require('path');
+
+// Log which database file we're using
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'pcpoints.sqlite');
+console.log('Using database at:', dbPath);
 
 const url = process.env.RESTORE_SQL_URL;
 if (!url) {
@@ -18,7 +23,7 @@ if (!url) {
 }
 
 async function main() {
-  console.log('Fetching backup from URL...');
+  console.log('Fetching backup from URL:', url);
   const res = await fetch(url);
   if (!res.ok) {
     console.error('Failed to fetch backup:', res.status, res.statusText);
@@ -52,7 +57,16 @@ async function main() {
   const users = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
   const events = db.prepare('SELECT COUNT(*) AS c FROM events').get().c;
   const attendance = db.prepare('SELECT COUNT(*) AS c FROM attendance').get().c;
-  console.log('Restore complete:', users, 'users,', events, 'events,', attendance, 'attendance records.');
+  console.log('✅ Restore complete:', users, 'users,', events, 'events,', attendance, 'attendance records.');
+  
+  if (users === 0) {
+    console.error('⚠️  WARNING: Restore completed but database has 0 users!');
+    console.error('   Check that:');
+    console.error('   1. DATABASE_PATH is set correctly (should be /data/pcpoints.sqlite on Railway)');
+    console.error('   2. Volume is mounted at /data');
+    console.error('   3. The backup SQL executed without errors');
+    process.exit(1);
+  }
 }
 
 main();
