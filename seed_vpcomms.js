@@ -12,10 +12,7 @@ const VPCOMMS_NAME = 'VP Communications';
 const VPCOMMS_USERNAME = 'vpcomm'; // or whatever username you want
 
 function main() {
-  // Check if VP Comms already exists
-  const existing = db
-    .prepare('SELECT id FROM users WHERE email = ? OR role_level = 3')
-    .get(VPCOMMS_EMAIL);
+  const existing = db.fetchUserByEmailOrRole3(VPCOMMS_EMAIL);
 
   if (existing) {
     console.log('VP Communications account already exists. Skipping.');
@@ -25,12 +22,15 @@ function main() {
   const hash = bcrypt.hashSync(VPCOMMS_PASSWORD, 10);
 
   try {
-    db.prepare(
-      `
-        INSERT INTO users (name, username, email, password_hash, role_level, must_change_password, is_active)
-        VALUES (?, ?, ?, ?, 3, 0, 1)
-      `
-    ).run(VPCOMMS_NAME, VPCOMMS_USERNAME, VPCOMMS_EMAIL, hash);
+    db.insertOneUserWithActive({
+      name: VPCOMMS_NAME,
+      username: VPCOMMS_USERNAME,
+      email: VPCOMMS_EMAIL,
+      password_hash: hash,
+      role_level: 3,
+      must_change_password: 0,
+      is_active: 1,
+    });
 
     console.log('VP Communications account created successfully!');
     console.log(`Email: ${VPCOMMS_EMAIL}`);

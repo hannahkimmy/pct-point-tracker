@@ -27,20 +27,16 @@ async function runRestoreFromUrl(db, url) {
   const isFullDump = /CREATE\s+TABLE\s+users\s*\(/i.test(sql);
   if (isFullDump) {
     console.log('Detected full .dump format; dropping tables so CREATE TABLE can run...');
-    db.exec('PRAGMA foreign_keys = OFF;');
-    db.exec('DROP TABLE IF EXISTS attendance; DROP TABLE IF EXISTS events; DROP TABLE IF EXISTS users;');
-    db.exec('PRAGMA foreign_keys = ON;');
+    db.dropTablesForRestore();
   } else {
     console.log('Clearing existing data...');
-    db.exec('DELETE FROM attendance; DELETE FROM events; DELETE FROM users;');
+    db.clearTablesForRestore();
   }
 
   console.log('Running backup SQL...');
-  db.exec(sql);
+  db.execSql(sql);
 
-  const users = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-  const events = db.prepare('SELECT COUNT(*) AS c FROM events').get().c;
-  const attendance = db.prepare('SELECT COUNT(*) AS c FROM attendance').get().c;
+  const { userCount: users, eventCount: events, attendanceCount: attendance } = db.getCounts();
   console.log('✅ Restore complete:', users, 'users,', events, 'events,', attendance, 'attendance records.');
 
   if (users === 0) {

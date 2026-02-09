@@ -4,10 +4,7 @@
 const db = require('./db');
 
 function main() {
-  // Get all users with @pct.local emails
-  const users = db
-    .prepare("SELECT id, username, email FROM users WHERE email LIKE '%@pct.local'")
-    .all();
+  const users = db.fetchUsersWithPctLocalEmail();
 
   if (users.length === 0) {
     console.log('No users found with @pct.local emails. Nothing to migrate.');
@@ -18,19 +15,13 @@ function main() {
 
   const txn = db.transaction(() => {
     let updated = 0;
-    const stmt = db.prepare('UPDATE users SET email = ? WHERE id = ?');
-
     for (const user of users) {
-      // Extract the NetID/username part before @pct.local
       const netId = user.email.replace('@pct.local', '');
       const newEmail = `${netId}@illinois.edu`;
-
-      // Update the email
-      stmt.run(newEmail, user.id);
+      db.updateUserEmail(user.id, newEmail);
       updated++;
       console.log(`Updated user ${user.username}: ${user.email} → ${newEmail}`);
     }
-
     return updated;
   });
 

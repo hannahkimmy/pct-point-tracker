@@ -76,7 +76,7 @@ app.post('/api/bootstrap-admin', (req, res) => {
     return res.status(400).json({ error: 'Name, username and password are required' });
   }
 
-  const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+  const count = db.countUsers();
   if (count > 0) {
     return res
       .status(400)
@@ -84,17 +84,16 @@ app.post('/api/bootstrap-admin', (req, res) => {
   }
 
   const hash = bcrypt.hashSync(password, 10);
-  const stmt = db.prepare(
-    `
-      INSERT INTO users (name, username, email, password_hash, role_level, must_change_password)
-      VALUES (?, ?, ?, ?, 3, 0)
-    `
-  );
-  const info = stmt.run(name, username, email || null, hash);
+  const lastId = db.insertOneUser({
+    name,
+    username,
+    email: email || null,
+    password_hash: hash,
+    role_level: 3,
+    must_change_password: 0,
+  });
 
-  const user = db
-    .prepare('SELECT id, name, username, email, role_level FROM users WHERE id = ?')
-    .get(info.lastInsertRowid);
+  const user = db.fetchOneUserSafe(lastId);
   const token = createToken(user);
 
   res
@@ -112,12 +111,7 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ error: 'Username/email and password required' });
   }
 
-  // Try username first, then email
-  let user = db
-    .prepare(
-      'SELECT id, name, username, email, password_hash, role_level, is_active, must_change_password FROM users WHERE username = ? OR email = ?'
-    )
-    .get(loginIdentifier, loginIdentifier);
+  const user = db.fetchUserByLoginIdentifier(loginIdentifier);
 
   if (!user) {
     console.log('Login failed: no user found for', loginIdentifier.includes('@') ? 'email' : 'username');
@@ -159,9 +153,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/me', authRequired, (req, res) => {
-  const user = db
-    .prepare('SELECT id, name, username, email, role_level, is_active FROM users WHERE id = ?')
-    .get(req.user.id);
+  const user = db.fetchOneUserForMe(req.user.id);
   if (!user) {
     res.clearCookie(JWT_COOKIE_NAME);
     return res.status(401).json({ error: 'User not found' });
@@ -183,7 +175,7 @@ app.get('/api/me', authRequired, (req, res) => {
 
 // Middleware to refresh user role from database before permission checks
 function refreshUserRole(req, res, next) {
-  const dbUser = db.prepare('SELECT role_level FROM users WHERE id = ?').get(req.user.id);
+  const dbUser = db.fetchUserRoleLevel(req.user.id);
   if (dbUser) {
     req.user.role_level = dbUser.role_level;
   }
@@ -204,17 +196,15 @@ app.post('/api/users', authRequired, refreshUserRole, requireRole(3), (req, res)
 
   const hash = bcrypt.hashSync(password, 10);
   try {
-    const info = db
-      .prepare(
-        `
-          INSERT INTO users (name, username, email, password_hash, role_level, must_change_password)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `
-      )
-      .run(name, username, email || null, hash, role_level, role_level < 3 ? 1 : 0);
-    const user = db
-      .prepare('SELECT id, name, username, email, role_level FROM users WHERE id = ?')
-      .get(info.lastInsertRowid);
+    const lastId = db.insertOneUser({
+      name,
+      username,
+      email: email || null,
+      password_hash: hash,
+      role_level,
+      must_change_password: role_level < 3 ? 1 : 0,
+    });
+    const user = db.fetchOneUserSafe(lastId);
     res.status(201).json({ user });
   } catch (e) {
     if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -227,11 +217,7 @@ app.post('/api/users', authRequired, refreshUserRole, requireRole(3), (req, res)
 
 // List all active users (level 1+ for attendance; level 2+ also for viewing)
 app.get('/api/users', authRequired, requireRole(1), (req, res) => {
-  const users = db
-    .prepare(
-      'SELECT id, name, username, email, role_level, is_active FROM users ORDER BY name ASC'
-    )
-    .all();
+  const users = db.fetchAllUsers();
   res.json({ users });
 });
 
@@ -243,17 +229,15 @@ app.patch('/api/users/:id/role', authRequired, requireRole(3), (req, res) => {
     return res.status(400).json({ error: 'Invalid role_level' });
   }
 
-  db.prepare('UPDATE users SET role_level = ? WHERE id = ?').run(role_level, userId);
-  const user = db
-    .prepare('SELECT id, name, username, email, role_level FROM users WHERE id = ?')
-    .get(userId);
+  db.updateUserRole(userId, role_level);
+  const user = db.fetchOneUserSafe(userId);
   res.json({ user });
 });
 
 // Soft-delete user (level 3 VP Comms only)
 app.delete('/api/users/:id', authRequired, requireRole(3), (req, res) => {
   const userId = Number(req.params.id);
-  db.prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(userId);
+  db.deactivateUser(userId);
   res.json({ ok: true });
 });
 
@@ -276,9 +260,7 @@ app.post('/api/change-password', authRequired, (req, res) => {
     return res.status(400).json({ error: 'New password must be at least 6 characters long' });
   }
 
-  const user = db
-    .prepare('SELECT id, password_hash, must_change_password FROM users WHERE id = ?')
-    .get(req.user.id);
+  const user = db.fetchUserForPasswordChange(req.user.id);
   if (!user) return res.status(400).json({ error: 'User not found' });
 
   const valid = bcrypt.compareSync(trimmedCurrent, user.password_hash);
@@ -289,9 +271,7 @@ app.post('/api/change-password', authRequired, (req, res) => {
   }
 
   const newHash = bcrypt.hashSync(trimmedNew, 10);
-  db.prepare(
-    'UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?'
-  ).run(newHash, req.user.id);
+  db.updateUserPassword(req.user.id, newHash);
 
   res.json({ ok: true });
 });
@@ -312,33 +292,30 @@ app.post('/api/events', authRequired, requireRole(1), (req, res) => {
   console.log('Creating event:', { name, category, date, points, presentUserIds, mandatory: isMandatory });
 
   const txn = db.transaction(() => {
-    const info = db
-      .prepare(
-        'INSERT INTO events (name, category, date, points, created_by, semester, mandatory) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      )
-      .run(name, category, date, points, req.user.id, 'N/A', isMandatory ? 1 : 0);
-    const eventId = info.lastInsertRowid;
+    const eventId = db.insertOneEvent({
+      name,
+      category,
+      date,
+      points,
+      created_by: req.user.id,
+      semester: 'N/A',
+      mandatory: isMandatory,
+    });
 
-    const allUsers = db
-      .prepare('SELECT id FROM users WHERE is_active = 1')
-      .all();
+    const allUsers = db.fetchActiveUserIds();
 
     console.log('All active users:', allUsers.map(u => u.id));
     console.log('Present user IDs received:', presentUserIds);
 
     const presentSet = new Set((presentUserIds || []).map(Number).filter(id => !isNaN(id)));
     console.log('Present set:', Array.from(presentSet));
-    
-    const stmt = db.prepare(
-      'INSERT INTO attendance (user_id, event_id, status) VALUES (?, ?, ?)'
-    );
 
     let presentCount = 0;
     let absentCount = 0;
-    
+
     for (const u of allUsers) {
       const status = presentSet.has(u.id) ? 'present' : 'absent';
-      stmt.run(u.id, eventId, status);
+      db.insertOneAttendance(u.id, eventId, status);
       if (status === 'present') presentCount++;
       else absentCount++;
     }
@@ -349,15 +326,13 @@ app.post('/api/events', authRequired, requireRole(1), (req, res) => {
   });
 
   const eventId = txn();
-  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
+  const event = db.fetchOneEvent(eventId);
   res.status(201).json({ event });
 });
 
 // List events
 app.get('/api/events', authRequired, requireRole(1), (req, res) => {
-  const events = db
-    .prepare('SELECT * FROM events ORDER BY date DESC')
-    .all();
+  const events = db.fetchAllEvents();
   
   // Add canEdit and canDelete flags for each event (level 2+ can edit/delete all, level 1 can only edit/delete their own)
   const eventsWithPermissions = events.map(event => ({
@@ -372,17 +347,14 @@ app.get('/api/events', authRequired, requireRole(1), (req, res) => {
 // Get a single event with attendance
 app.get('/api/events/:id', authRequired, requireRole(1), (req, res) => {
   const eventId = Number(req.params.id);
-  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
+  const event = db.fetchOneEvent(eventId);
   if (!event) {
     return res.status(404).json({ error: 'Event not found' });
   }
-  
-  // Check if user can edit this event (level 2+ or creator)
+
   const canEdit = req.user.role_level >= 2 || event.created_by === req.user.id;
-  
-  const attendance = db
-    .prepare('SELECT user_id, status FROM attendance WHERE event_id = ?')
-    .all(eventId);
+
+  const attendance = db.fetchAttendanceByEventId(eventId);
   
   const presentUserIds = attendance
     .filter(a => a.status === 'present')
@@ -396,7 +368,7 @@ app.put('/api/events/:id', authRequired, requireRole(1), (req, res) => {
   const eventId = Number(req.params.id);
   const { name, category, date, points, presentUserIds, mandatory } = req.body;
   
-  const existingEvent = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
+  const existingEvent = db.fetchOneEvent(eventId);
   if (!existingEvent) {
     return res.status(404).json({ error: 'Event not found' });
   }
@@ -417,35 +389,24 @@ app.put('/api/events/:id', authRequired, requireRole(1), (req, res) => {
   console.log('Updating event:', { eventId, name, category, date, points, presentUserIds, mandatory: isMandatory });
 
   const txn = db.transaction(() => {
-    // Update event (keep existing semester value)
-    db.prepare(
-      'UPDATE events SET name = ?, category = ?, date = ?, points = ?, mandatory = ? WHERE id = ?'
-    ).run(name, category, date, points, isMandatory ? 1 : 0, eventId);
+    db.updateEvent(eventId, { name, category, date, points, mandatory: isMandatory });
 
-    // Delete existing attendance
-    db.prepare('DELETE FROM attendance WHERE event_id = ?').run(eventId);
+    db.deleteAttendanceByEventId(eventId);
 
-    // Insert new attendance
-    const allUsers = db
-      .prepare('SELECT id FROM users WHERE is_active = 1')
-      .all();
+    const allUsers = db.fetchActiveUserIds();
 
     console.log('All active users:', allUsers.map(u => u.id));
     console.log('Present user IDs received:', presentUserIds);
 
     const presentSet = new Set((presentUserIds || []).map(Number).filter(id => !isNaN(id)));
     console.log('Present set:', Array.from(presentSet));
-    
-    const stmt = db.prepare(
-      'INSERT INTO attendance (user_id, event_id, status) VALUES (?, ?, ?)'
-    );
 
     let presentCount = 0;
     let absentCount = 0;
 
     for (const u of allUsers) {
       const status = presentSet.has(u.id) ? 'present' : 'absent';
-      stmt.run(u.id, eventId, status);
+      db.insertOneAttendance(u.id, eventId, status);
       if (status === 'present') presentCount++;
       else absentCount++;
     }
@@ -456,27 +417,25 @@ app.put('/api/events/:id', authRequired, requireRole(1), (req, res) => {
   });
 
   txn();
-  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
+  const event = db.fetchOneEvent(eventId);
   res.json({ event });
 });
 
 // Delete event (level 1+)
 app.delete('/api/events/:id', authRequired, requireRole(1), (req, res) => {
   const eventId = Number(req.params.id);
-  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(eventId);
-  
+  const event = db.fetchOneEvent(eventId);
+
   if (!event) {
     return res.status(404).json({ error: 'Event not found' });
   }
-  
-  // Check permissions: level 2+ can delete all events, level 1 can only delete their own
+
   if (req.user.role_level < 2 && event.created_by !== req.user.id) {
     return res.status(403).json({ error: 'You can only delete events you created' });
   }
-  
-  // Delete event (attendance will be cascade deleted due to foreign key constraint)
-  db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
-  
+
+  db.deleteEvent(eventId);
+
   res.json({ ok: true });
 });
 
@@ -486,21 +445,7 @@ app.delete('/api/events/:id', authRequired, requireRole(1), (req, res) => {
 // Mandatory events: present => 0, absent => -1. Regular events: present => points, absent => 0.
 app.get('/api/my-points', authRequired, (req, res) => {
   const userId = req.user.id;
-  const rows = db
-    .prepare(
-      `
-      SELECT e.category,
-        SUM(CASE
-          WHEN e.mandatory = 1 THEN (CASE WHEN a.status = 'present' THEN 0 ELSE -1 END)
-          ELSE (CASE WHEN a.status = 'present' THEN e.points ELSE 0 END)
-        END) AS total_points
-      FROM attendance a
-      JOIN events e ON a.event_id = e.id
-      WHERE a.user_id = ?
-      GROUP BY e.category
-    `
-    )
-    .all(userId);
+  const rows = db.fetchPointsSummaryByUserId(userId);
 
   const summary = {
     brotherhood: 0,
@@ -522,21 +467,7 @@ app.get('/api/my-points', authRequired, (req, res) => {
 // Mandatory events: present => 0, absent => -1. Regular events: present => points, absent => 0.
 app.get('/api/users/:id/points', authRequired, requireRole(1), (req, res) => {
   const userId = Number(req.params.id);
-  const rows = db
-    .prepare(
-      `
-      SELECT e.category,
-        SUM(CASE
-          WHEN e.mandatory = 1 THEN (CASE WHEN a.status = 'present' THEN 0 ELSE -1 END)
-          ELSE (CASE WHEN a.status = 'present' THEN e.points ELSE 0 END)
-        END) AS total_points
-      FROM attendance a
-      JOIN events e ON a.event_id = e.id
-      WHERE a.user_id = ?
-      GROUP BY e.category
-    `
-    )
-    .all(userId);
+  const rows = db.fetchPointsSummaryByUserId(userId);
 
   const summary = {
     brotherhood: 0,
@@ -557,26 +488,10 @@ app.get('/api/users/:id/points', authRequired, requireRole(1), (req, res) => {
 // Get all members' points (level 2+ only)
 // Only returns level 0 members (regular members), excluding level 1+ (leadership/exec)
 app.get('/api/all-members-points', authRequired, requireRole(2), (req, res) => {
-  const allUsers = db
-    .prepare('SELECT id, name, username, email, role_level FROM users WHERE is_active = 1 AND role_level < 1 ORDER BY name ASC')
-    .all();
+  const allUsers = db.fetchActiveMembersForPoints();
 
   const membersWithPoints = allUsers.map((user) => {
-    const rows = db
-      .prepare(
-        `
-        SELECT e.category,
-          SUM(CASE
-            WHEN e.mandatory = 1 THEN (CASE WHEN a.status = 'present' THEN 0 ELSE -1 END)
-            ELSE (CASE WHEN a.status = 'present' THEN e.points ELSE 0 END)
-          END) AS total_points
-        FROM attendance a
-        JOIN events e ON a.event_id = e.id
-        WHERE a.user_id = ?
-        GROUP BY e.category
-      `
-      )
-      .all(user.id);
+    const rows = db.fetchPointsSummaryByUserId(user.id);
 
     const summary = {
       brotherhood: 0,
@@ -607,7 +522,7 @@ app.get('/api/all-members-points', authRequired, requireRole(2), (req, res) => {
 
 // Wipe all events and attendance, keep users
 app.post('/api/reset-semester', authRequired, requireRole(3), (req, res) => {
-  db.exec('DELETE FROM attendance; DELETE FROM events;');
+  db.resetSemester();
   res.json({ ok: true });
 });
 
@@ -615,9 +530,7 @@ app.post('/api/reset-semester', authRequired, requireRole(3), (req, res) => {
 app.get('/api/diagnostic', (req, res) => {
   console.log('Diagnostic endpoint hit');
   try {
-    const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-    const eventCount = db.prepare('SELECT COUNT(*) AS c FROM events').get().c;
-    const attendanceCount = db.prepare('SELECT COUNT(*) AS c FROM attendance').get().c;
+    const { userCount, eventCount, attendanceCount } = db.getCounts();
     console.log(`Diagnostic: ${userCount} users, ${eventCount} events, ${attendanceCount} attendance records`);
     res.json({
       ok: true,

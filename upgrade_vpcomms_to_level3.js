@@ -5,9 +5,7 @@ const db = require('./db');
 
 const VPCOMMS_EMAIL = 'pct.vpcommunications@gmail.com';
 
-const result = db
-  .prepare('UPDATE users SET role_level = 3 WHERE email = ?')
-  .run(VPCOMMS_EMAIL);
+const result = db.updateUserRoleLevelByEmail(VPCOMMS_EMAIL, 3);
 
 if (result.changes > 0) {
   console.log(`Updated ${result.changes} user(s) to role_level 3 (VP Comms).`);

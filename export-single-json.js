@@ -3,9 +3,9 @@ const db = require('./db');
 const fs = require('fs');
 
 const data = {
-  users: db.prepare('SELECT * FROM users').all(),
-  events: db.prepare('SELECT * FROM events').all(),
-  attendance: db.prepare('SELECT * FROM attendance').all(),
+  users: db.fetchAllUsersRaw(),
+  events: db.fetchAllEventsRaw(),
+  attendance: db.fetchAllAttendanceRaw(),
   exportedAt: new Date().toISOString()
 };
 

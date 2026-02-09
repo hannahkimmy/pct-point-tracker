@@ -14,9 +14,9 @@ try {
   console.log('✓ Exported to backup.sql (full SQL dump)');
 } catch (e) {
   console.log('sqlite3 CLI not in PATH. Creating INSERT-based export...');
-  const users = db.prepare('SELECT * FROM users').all();
-  const events = db.prepare('SELECT * FROM events').all();
-  const attendance = db.prepare('SELECT * FROM attendance').all();
+  const users = db.fetchAllUsersRaw();
+  const events = db.fetchAllEventsRaw();
+  const attendance = db.fetchAllAttendanceRaw();
   let sql = '-- PC Points backup\n';
   sql += 'BEGIN TRANSACTION;\n';
   users.forEach(u => {

@@ -2,7 +2,7 @@
 const db = require('./db');
 const fs = require('fs');
 
-const users = db.prepare('SELECT id, name, username, email, role_level FROM users ORDER BY name').all();
+const users = db.fetchAllUsersForCsv();
 const header = 'First Name,Last Name,Net ID\n';
 const rows = users.map(u => {
   const parts = (u.name || '').trim().split(/\s+/);

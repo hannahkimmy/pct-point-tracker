@@ -20,32 +20,9 @@ async function importData() {
       const users = JSON.parse(fs.readFileSync('exported-users.json', 'utf8'));
       console.log(`\nImporting ${users.length} users...`);
       
-      const insertUser = db.prepare(`
-        INSERT INTO users (id, name, username, email, password_hash, role_level, must_change_password, is_active, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          name = excluded.name,
-          username = excluded.username,
-          email = excluded.email,
-          password_hash = excluded.password_hash,
-          role_level = excluded.role_level,
-          must_change_password = excluded.must_change_password,
-          is_active = excluded.is_active
-      `);
-      
       for (const user of users) {
         try {
-          insertUser.run(
-            user.id,
-            user.name,
-            user.username,
-            user.email,
-            user.password_hash,
-            user.role_level,
-            user.must_change_password,
-            user.is_active,
-            user.created_at
-          );
+          db.upsertUserForImport(user);
         } catch (e) {
           console.log(`  ⚠️  Skipped user ${user.username}: ${e.message}`);
         }
@@ -58,32 +35,9 @@ async function importData() {
       const events = JSON.parse(fs.readFileSync('exported-events.json', 'utf8'));
       console.log(`\nImporting ${events.length} events...`);
       
-      const insertEvent = db.prepare(`
-        INSERT INTO events (id, name, category, date, points, created_by, semester, mandatory, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          name = excluded.name,
-          category = excluded.category,
-          date = excluded.date,
-          points = excluded.points,
-          created_by = excluded.created_by,
-          semester = excluded.semester,
-          mandatory = excluded.mandatory
-      `);
-      
       for (const event of events) {
         try {
-          insertEvent.run(
-            event.id,
-            event.name,
-            event.category,
-            event.date,
-            event.points,
-            event.created_by,
-            event.semester,
-            event.mandatory || 0,
-            event.created_at
-          );
+          db.upsertEventForImport(event);
         } catch (e) {
           console.log(`  ⚠️  Skipped event ${event.name}: ${e.message}`);
         }
@@ -96,24 +50,9 @@ async function importData() {
       const attendance = JSON.parse(fs.readFileSync('exported-attendance.json', 'utf8'));
       console.log(`\nImporting ${attendance.length} attendance records...`);
       
-      const insertAttendance = db.prepare(`
-        INSERT INTO attendance (id, user_id, event_id, status, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          user_id = excluded.user_id,
-          event_id = excluded.event_id,
-          status = excluded.status
-      `);
-      
       for (const record of attendance) {
         try {
-          insertAttendance.run(
-            record.id,
-            record.user_id,
-            record.event_id,
-            record.status,
-            record.created_at
-          );
+          db.upsertAttendanceForImport(record);
         } catch (e) {
           console.log(`  ⚠️  Skipped attendance record: ${e.message}`);
         }

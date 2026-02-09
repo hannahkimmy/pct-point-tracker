@@ -116,34 +116,26 @@ function main() {
 
       const name = `${firstName} ${lastName}`.trim();
 
-      const existing = db
-        .prepare('SELECT id, role_level FROM users WHERE username = ?')
-        .get(netId);
+      const existing = db.fetchUserByUsername(netId);
 
-      // Never overwrite a level 2 admin (VP Communications)
       if (existing && existing.role_level >= 2) {
         continue;
       }
 
       if (existing) {
-        db.prepare(
-          `
-            UPDATE users
-            SET name = ?, password_hash = ?, role_level = 0,
-                must_change_password = 1, is_active = 1
-            WHERE id = ?
-          `
-        ).run(name, defaultHash, existing.id);
+        db.updateUserForCsvImport(existing.id, name, defaultHash);
         updated++;
       } else {
-        // Email must be NOT NULL and UNIQUE; use a unique placeholder per NetID.
         const emailPlaceholder = `${netId}@illinois.edu`;
-        db.prepare(
-          `
-            INSERT INTO users (name, username, email, password_hash, role_level, must_change_password, is_active)
-            VALUES (?, ?, ?, ?, 0, 1, 1)
-          `
-        ).run(name, netId, emailPlaceholder, defaultHash);
+        db.insertOneUserWithActive({
+          name,
+          username: netId,
+          email: emailPlaceholder,
+          password_hash: defaultHash,
+          role_level: 0,
+          must_change_password: 1,
+          is_active: 1,
+        });
         created++;
       }
     }
